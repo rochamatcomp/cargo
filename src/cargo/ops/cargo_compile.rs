@@ -54,11 +54,22 @@ pub struct CompileOptions<'a> {
     /// Filter to apply to the root package to select which targets will be
     /// built.
     pub filter: CompileFilter,
+<<<<<<< HEAD
     /// Extra arguments to be passed to rustdoc (single target only)
+=======
+    /// Whether this is a release build or not
+    pub release: bool,
+    /// Mode for this compile.
+    pub mode: CompileMode,
+    /// `--error_format` flag for the compiler.
+    pub message_format: MessageFormat,
+    /// Extra arguments to be passed to rustdoc (for main crate and dependencies)
+>>>>>>> Make command-line arguments owned
     pub target_rustdoc_args: Option<Vec<String>>,
     /// The specified target will be compiled with all the available arguments,
     /// note that this only accounts for the *final* invocation of rustc
     pub target_rustc_args: Option<Vec<String>>,
+<<<<<<< HEAD
     /// Extra arguments passed to all selected targets for rustdoc.
     pub local_rustdoc_args: Option<Vec<String>>,
     /// The directory to copy final artifacts to. Note that even if `out_dir` is
@@ -67,20 +78,34 @@ pub struct CompileOptions<'a> {
     // Note that, although the cmd-line flag name is `out-dir`, in code we use
     // `export_dir`, to avoid confusion with out dir at `target/debug/deps`.
     pub export_dir: Option<PathBuf>,
+=======
+>>>>>>> Make command-line arguments owned
 }
 
 impl<'a> CompileOptions<'a> {
     pub fn new(config: &'a Config, mode: CompileMode) -> CargoResult<CompileOptions<'a>> {
         Ok(CompileOptions {
             config,
+<<<<<<< HEAD
             build_config: BuildConfig::new(config, None, &None, mode)?,
+=======
+            jobs: None,
+            target: None,
+>>>>>>> Make command-line arguments owned
             features: Vec::new(),
             all_features: false,
             no_default_features: false,
             spec: ops::Packages::Packages(Vec::new()),
+<<<<<<< HEAD
             filter: CompileFilter::Default {
                 required_features_filterable: false,
             },
+=======
+            mode,
+            release: false,
+            filter: CompileFilter::Default { required_features_filterable: false },
+            message_format: MessageFormat::Human,
+>>>>>>> Make command-line arguments owned
             target_rustdoc_args: None,
             target_rustc_args: None,
             local_rustdoc_args: None,
@@ -89,6 +114,25 @@ impl<'a> CompileOptions<'a> {
     }
 }
 
+<<<<<<< HEAD
+=======
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum CompileMode {
+    Test,
+    Build,
+    Check { test: bool },
+    Bench,
+    Doc { deps: bool },
+    Doctest,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MessageFormat {
+    Human,
+    Json
+}
+
+>>>>>>> Make command-line arguments owned
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Packages {
     Default,
@@ -98,7 +142,13 @@ pub enum Packages {
 }
 
 impl Packages {
+<<<<<<< HEAD
     pub fn from_flags(all: bool, exclude: Vec<String>, package: Vec<String>) -> CargoResult<Self> {
+=======
+    pub fn from_flags(all: bool, exclude: Vec<String>, package: Vec<String>)
+        -> CargoResult<Self>
+    {
+>>>>>>> Make command-line arguments owned
         Ok(match (all, exclude.len(), package.len()) {
             (false, 0, 0) => Packages::Default,
             (false, 0, _) => Packages::Packages(package),
@@ -108,6 +158,7 @@ impl Packages {
         })
     }
 
+<<<<<<< HEAD
     pub fn to_package_id_specs(&self, ws: &Workspace<'_>) -> CargoResult<Vec<PackageIdSpec>> {
         let specs = match self {
             Packages::All => ws
@@ -134,6 +185,37 @@ impl Packages {
             },
             Packages::Packages(packages) if packages.is_empty() => {
                 vec![PackageIdSpec::from_package_id(ws.current()?.package_id())]
+=======
+    pub fn into_package_id_specs(&self, ws: &Workspace) -> CargoResult<Vec<PackageIdSpec>> {
+        let specs = match *self {
+            Packages::All => {
+                ws.members()
+                    .map(Package::package_id)
+                    .map(PackageIdSpec::from_package_id)
+                    .collect()
+            }
+            Packages::OptOut(ref opt_out) => {
+                ws.members()
+                    .map(Package::package_id)
+                    .map(PackageIdSpec::from_package_id)
+                    .filter(|p| opt_out.iter().position(|x| *x == p.name()).is_none())
+                    .collect()
+            }
+            Packages::Packages(ref packages) if packages.is_empty() => {
+                ws.current_opt()
+                    .map(Package::package_id)
+                    .map(PackageIdSpec::from_package_id)
+                    .into_iter().collect()
+            }
+            Packages::Packages(ref packages) => {
+                packages.iter().map(|p| PackageIdSpec::parse(p)).collect::<CargoResult<Vec<_>>>()?
+            }
+            Packages::Default => {
+                ws.default_members()
+                    .map(Package::package_id)
+                    .map(PackageIdSpec::from_package_id)
+                    .collect()
+>>>>>>> Make command-line arguments owned
             }
             Packages::Packages(packages) => packages
                 .iter()
@@ -208,12 +290,20 @@ pub enum CompileFilter {
     },
     Only {
         all_targets: bool,
+<<<<<<< HEAD
         lib: LibRule,
+=======
+        lib: bool,
+>>>>>>> Make command-line arguments owned
         bins: FilterRule,
         examples: FilterRule,
         tests: FilterRule,
         benches: FilterRule,
+<<<<<<< HEAD
     },
+=======
+    }
+>>>>>>> Make command-line arguments owned
 }
 
 pub fn compile<'a>(
@@ -235,6 +325,7 @@ pub fn compile_with_exec<'a>(
     compile_ws(ws, None, options, exec)
 }
 
+<<<<<<< HEAD
 pub fn compile_ws<'a>(
     ws: &Workspace<'a>,
     source: Option<Box<dyn Source + 'a>>,
@@ -274,6 +365,24 @@ pub fn compile_ws<'a>(
                 )?;
             }
         }
+=======
+pub fn compile_ws<'a>(ws: &Workspace<'a>,
+                      source: Option<Box<Source + 'a>>,
+                      options: &CompileOptions<'a>,
+                      exec: Arc<Executor>)
+                      -> CargoResult<ops::Compilation<'a>> {
+    let CompileOptions { config, jobs, target, ref spec, ref features,
+                         all_features, no_default_features,
+                         release, mode, message_format,
+                         ref filter,
+                         ref target_rustdoc_args,
+                         ref target_rustc_args } = *options;
+
+    let target = target.map(|s| s.to_string());
+
+    if jobs == Some(0) {
+        bail!("jobs must be at least 1")
+>>>>>>> Make command-line arguments owned
     }
 
     let default_arch_kind = if build_config.requested_target.is_some() {
@@ -293,6 +402,7 @@ pub fn compile_ws<'a>(
     let resolve = ops::resolve_ws_with_method(ws, source, method, &specs)?;
     let (packages, resolve_with_overrides) = resolve;
 
+<<<<<<< HEAD
     let to_build_ids = specs
         .iter()
         .map(|s| s.query(resolve_with_overrides.iter()))
@@ -316,6 +426,69 @@ pub fn compile_ws<'a>(
                  and is not a member of the workspace",
                 pkg.name()
             );
+=======
+    let to_builds = specs.iter().map(|p| {
+        let pkgid = p.query(resolve_with_overrides.iter())?;
+        let p = packages.get(pkgid)?;
+        p.manifest().print_teapot(ws.config());
+        Ok(p)
+    }).collect::<CargoResult<Vec<_>>>()?;
+
+    let mut general_targets = Vec::new();
+    let mut package_targets = Vec::new();
+
+    match (target_rustc_args, target_rustdoc_args) {
+        (&Some(..), _) |
+        (_, &Some(..)) if to_builds.len() != 1 => {
+            panic!("`rustc` and `rustdoc` should not accept multiple `-p` flags")
+        }
+        (&Some(ref args), _) => {
+            let all_features = resolve_all_features(&resolve_with_overrides,
+                                                    to_builds[0].package_id());
+            let targets = generate_targets(to_builds[0], profiles,
+                                           mode, filter, &all_features, release)?;
+            if targets.len() == 1 {
+                let (target, profile) = targets[0];
+                let mut profile = profile.clone();
+                profile.rustc_args = Some(args.to_vec());
+                general_targets.push((target, profile));
+            } else {
+                bail!("extra arguments to `rustc` can only be passed to one \
+                       target, consider filtering\nthe package by passing \
+                       e.g. `--lib` or `--bin NAME` to specify a single target")
+            }
+        }
+        (&None, &Some(ref args)) => {
+            let all_features = resolve_all_features(&resolve_with_overrides,
+                                                    to_builds[0].package_id());
+            let targets = generate_targets(to_builds[0], profiles,
+                                           mode, filter, &all_features, release)?;
+            if targets.len() == 1 {
+                let (target, profile) = targets[0];
+                let mut profile = profile.clone();
+                profile.rustdoc_args = Some(args.to_vec());
+                general_targets.push((target, profile));
+            } else {
+                bail!("extra arguments to `rustdoc` can only be passed to one \
+                       target, consider filtering\nthe package by passing e.g. \
+                       `--lib` or `--bin NAME` to specify a single target")
+            }
+        }
+        (&None, &None) => {
+            for &to_build in to_builds.iter() {
+                let all_features = resolve_all_features(&resolve_with_overrides,
+                                                        to_build.package_id());
+                let targets = generate_targets(to_build, profiles, mode,
+                                               filter, &all_features, release)?;
+                package_targets.push((to_build, targets));
+            }
+        }
+    };
+
+    for &(target, ref profile) in &general_targets {
+        for &to_build in to_builds.iter() {
+            package_targets.push((to_build, vec![(target, profile)]));
+>>>>>>> Make command-line arguments owned
         }
     }
 
@@ -399,7 +572,13 @@ impl FilterRule {
     fn matches(&self, target: &Target) -> bool {
         match *self {
             FilterRule::All => true,
+<<<<<<< HEAD
             FilterRule::Just(ref targets) => targets.iter().any(|x| *x == target.name()),
+=======
+            FilterRule::Just(ref targets) => {
+                targets.iter().any(|x| *x == target.name())
+            },
+>>>>>>> Make command-line arguments owned
         }
     }
 
@@ -419,6 +598,7 @@ impl FilterRule {
 }
 
 impl CompileFilter {
+<<<<<<< HEAD
     /// Construct a CompileFilter from raw command line arguments.
     pub fn from_raw_arguments(
         lib_only: bool,
@@ -433,6 +613,14 @@ impl CompileFilter {
         all_targets: bool,
     ) -> CompileFilter {
         let rule_lib = if lib_only { LibRule::True } else { LibRule::False };
+=======
+    pub fn new(lib_only: bool,
+               bins: Vec<String>, all_bins: bool,
+               tsts: Vec<String>, all_tsts: bool,
+               exms: Vec<String>, all_exms: bool,
+               bens: Vec<String>, all_bens: bool,
+               all_targets: bool) -> CompileFilter {
+>>>>>>> Make command-line arguments owned
         let rule_bins = FilterRule::new(bins, all_bins);
         let rule_tsts = FilterRule::new(tsts, all_tsts);
         let rule_exms = FilterRule::new(exms, all_exms);
@@ -481,6 +669,7 @@ impl CompileFilter {
         }
     }
 
+<<<<<<< HEAD
     pub fn need_dev_deps(&self, mode: CompileMode) -> bool {
         match mode {
             CompileMode::Test | CompileMode::Doctest | CompileMode::Bench => true,
@@ -495,6 +684,13 @@ impl CompileFilter {
                 } => examples.is_specific() || tests.is_specific() || benches.is_specific(),
             },
             CompileMode::RunCustomBuild => panic!("Invalid mode"),
+=======
+    pub fn need_dev_deps(&self) -> bool {
+        match *self {
+            CompileFilter::Default { .. } => true,
+            CompileFilter::Only { ref examples, ref tests, ref benches, .. } =>
+                examples.is_specific() || tests.is_specific() || benches.is_specific()
+>>>>>>> Make command-line arguments owned
         }
     }
 
@@ -503,6 +699,7 @@ impl CompileFilter {
     pub fn target_run(&self, target: &Target) -> bool {
         match *self {
             CompileFilter::Default { .. } => true,
+<<<<<<< HEAD
             CompileFilter::Only {
                 ref lib,
                 ref bins,
@@ -511,6 +708,9 @@ impl CompileFilter {
                 ref benches,
                 ..
             } => {
+=======
+            CompileFilter::Only { lib, ref bins, ref examples, ref tests, ref benches, .. } => {
+>>>>>>> Make command-line arguments owned
                 let rule = match *target.kind() {
                     TargetKind::Bin => bins,
                     TargetKind::Test => tests,
@@ -672,6 +872,7 @@ fn generate_targets<'a>(
                 }
             }
         }
+<<<<<<< HEAD
         CompileFilter::Only {
             all_targets,
             ref lib,
@@ -704,13 +905,152 @@ fn generate_targets<'a>(
                             names.join(", ")
                         );
                     }
+=======
+    }
+}
+
+/// Given a filter rule and some context, propose a list of targets
+fn propose_indicated_targets<'a>(pkg: &'a Package,
+                                 rule: &FilterRule,
+                                 desc: &'static str,
+                                 is_expected_kind: fn(&Target) -> bool,
+                                 profile: &'a Profile) -> CargoResult<Vec<BuildProposal<'a>>> {
+    match *rule {
+        FilterRule::All => {
+            let result = pkg.targets().iter().filter(|t| is_expected_kind(t)).map(|t| {
+                BuildProposal {
+                    target: t,
+                    profile,
+                    required: false,
+                }
+            });
+            Ok(result.collect())
+        }
+        FilterRule::Just(ref names) => {
+            let mut targets = Vec::new();
+            for name in names {
+                let target = pkg.targets().iter().find(|t| {
+                    t.name() == *name && is_expected_kind(t)
+                });
+                let t = match target {
+                    Some(t) => t,
+                    None => {
+                        let suggestion = pkg.find_closest_target(name, is_expected_kind);
+                        match suggestion {
+                            Some(s) => {
+                                let suggested_name = s.name();
+                                bail!("no {} target named `{}`\n\nDid you mean `{}`?",
+                                      desc, name, suggested_name)
+                            }
+                            None => bail!("no {} target named `{}`", desc, name),
+                        }
+                    }
+                };
+                debug!("found {} `{}`", desc, name);
+                targets.push(BuildProposal {
+                    target: t,
+                    profile,
+                    required: true,
+                });
+            }
+            Ok(targets)
+        }
+    }
+}
+
+/// Collect the targets that are libraries or have all required features available.
+fn filter_compatible_targets<'a>(mut proposals: Vec<BuildProposal<'a>>,
+                                 features: &HashSet<String>)
+        -> CargoResult<Vec<(&'a Target, &'a Profile)>> {
+    let mut compatible = Vec::with_capacity(proposals.len());
+    for proposal in proposals.drain(..) {
+        let unavailable_features = match proposal.target.required_features() {
+            Some(rf) => rf.iter().filter(|f| !features.contains(*f)).collect(),
+            None => Vec::new(),
+        };
+        if proposal.target.is_lib() || unavailable_features.is_empty() {
+            compatible.push((proposal.target, proposal.profile));
+        } else if proposal.required {
+            let required_features = proposal.target.required_features().unwrap();
+            let quoted_required_features: Vec<String> = required_features.iter()
+                                                                         .map(|s| format!("`{}`",s))
+                                                                         .collect();
+            bail!("target `{}` requires the features: {}\n\
+                  Consider enabling them by passing e.g. `--features=\"{}\"`",
+                  proposal.target.name(),
+                  quoted_required_features.join(", "),
+                  required_features.join(" "));
+        }
+    }
+    Ok(compatible)
+}
+
+/// Given the configuration for a build, this function will generate all
+/// target/profile combinations needed to be built.
+fn generate_targets<'a>(pkg: &'a Package,
+                        profiles: &'a Profiles,
+                        mode: CompileMode,
+                        filter: &CompileFilter,
+                        features: &HashSet<String>,
+                        release: bool)
+                        -> CargoResult<Vec<(&'a Target, &'a Profile)>> {
+    let build = if release {&profiles.release} else {&profiles.dev};
+    let test = if release {&profiles.bench} else {&profiles.test};
+    let profile = match mode {
+        CompileMode::Test => test,
+        CompileMode::Bench => &profiles.bench,
+        CompileMode::Build => build,
+        CompileMode::Check {test: false} => &profiles.check,
+        CompileMode::Check {test: true} => &profiles.check_test,
+        CompileMode::Doc { .. } => &profiles.doc,
+        CompileMode::Doctest => &profiles.doctest,
+    };
+
+    let test_profile = if profile.check {
+        &profiles.check_test
+    } else if mode == CompileMode::Build {
+        test
+    } else {
+        profile
+    };
+
+    let bench_profile = if profile.check {
+        &profiles.check_test
+    } else if mode == CompileMode::Build {
+        &profiles.bench
+    } else {
+        profile
+    };
+
+    let targets = match *filter {
+        CompileFilter::Default { required_features_filterable } => {
+            let deps = if release {
+                &profiles.bench_deps
+            } else {
+                &profiles.test_deps
+            };
+            generate_auto_targets(mode, pkg.targets(), profile, deps, required_features_filterable)
+        }
+        CompileFilter::Only { all_targets, lib, ref bins, ref examples, ref tests, ref benches } => {
+            let mut targets = Vec::new();
+
+            if lib {
+                if let Some(t) = pkg.targets().iter().find(|t| t.is_lib()) {
+                    targets.push(BuildProposal {
+                        target: t,
+                        profile,
+                        required: true,
+                    });
+                } else if !all_targets {
+                    bail!("no library targets found")
+>>>>>>> Make command-line arguments owned
                 }
                 proposals.extend(libs);
             }
 
             // If `--tests` was specified, add all targets that would be
             // generated by `cargo test`.
-            let test_filter = match tests {
+            let test_filter = match *tests {
                 FilterRule::All => Target::tested,
                 FilterRule::Just(_) => Target::is_test,
             };
@@ -721,7 +1061,7 @@ fn generate_targets<'a>(
             };
             // If `--benches` was specified, add all targets that would be
             // generated by `cargo bench`.
-            let bench_filter = match benches {
+            let bench_filter = match *benches {
                 FilterRule::All => Target::benched,
                 FilterRule::Just(_) => Target::is_bench,
             };

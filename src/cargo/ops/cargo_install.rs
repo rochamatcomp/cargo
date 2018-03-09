@@ -454,6 +454,7 @@ fn find_duplicates(
         }
     };
     match *filter {
+<<<<<<< HEAD
         CompileFilter::Default { .. } => pkg
             .targets()
             .iter()
@@ -465,6 +466,15 @@ fn find_duplicates(
             ref examples,
             ..
         } => {
+=======
+        CompileFilter::Default { .. } => {
+            pkg.targets().iter()
+                         .filter(|t| t.is_bin())
+                         .filter_map(|t| check(t.name().to_string()))
+                         .collect()
+        }
+        CompileFilter::Only { ref bins, ref examples, .. } => {
+>>>>>>> Make command-line arguments owned
             let all_bins: Vec<String> = bins.try_collect().unwrap_or_else(|| {
                 pkg.targets()
                     .iter()

@@ -18,6 +18,7 @@ pub struct DocOptions<'a> {
     pub compile_opts: ops::CompileOptions<'a>,
 }
 
+<<<<<<< HEAD
 /// Main method for `cargo doc`.
 pub fn doc(ws: &Workspace<'_>, options: &DocOptions<'_>) -> CargoResult<()> {
     let specs = options.compile_opts.spec.to_package_id_specs(ws)?;
@@ -29,6 +30,16 @@ pub fn doc(ws: &Workspace<'_>, options: &DocOptions<'_>) -> CargoResult<()> {
         options.compile_opts.no_default_features,
         &specs,
     )?;
+=======
+pub fn doc(ws: &Workspace, options: &DocOptions) -> CargoResult<()> {
+    let specs = options.compile_opts.spec.into_package_id_specs(ws)?;
+    let resolve = ops::resolve_ws_precisely(ws,
+                                            None,
+                                            &options.compile_opts.features,
+                                            options.compile_opts.all_features,
+                                            options.compile_opts.no_default_features,
+                                            &specs)?;
+>>>>>>> Make command-line arguments owned
     let (packages, resolve_with_overrides) = resolve;
 
     let ids = specs

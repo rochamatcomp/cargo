@@ -12,6 +12,7 @@ pub fn run(
 ) -> CargoResult<Option<ProcessError>> {
     let config = ws.config();
 
+<<<<<<< HEAD
     // We compute the `bins` here *just for diagnosis*. The actual set of
     // packages to be run is determined by the `ops::compile` call below.
     let packages = options.spec.get_packages(ws)?;
@@ -29,6 +30,32 @@ pub fn run(
             }))
         })
         .collect();
+=======
+    let pkg = match options.spec {
+        Packages::All |
+        Packages::Default |
+        Packages::OptOut(_) => unreachable!("cargo run supports single package only"),
+        Packages::Packages(ref xs) => match xs.len() {
+            0 => ws.current()?,
+            1 => ws.members()
+                .find(|pkg| &*pkg.name() == xs[0])
+                .ok_or_else(||
+                    format_err!("package `{}` is not a member of the workspace", xs[0])
+                )?,
+            _ => unreachable!("cargo run supports single package only"),
+        }
+    };
+
+    let bins: Vec<_> = pkg.manifest().targets().iter().filter(|a| {
+        !a.is_lib() && !a.is_custom_build() && if !options.filter.is_specific() {
+            a.is_bin()
+        } else {
+            options.filter.matches(a)
+        }
+    })
+    .map(|bin| bin.name())
+    .collect();
+>>>>>>> Make command-line arguments owned
 
     if bins.is_empty() {
         if !options.filter.is_specific() {

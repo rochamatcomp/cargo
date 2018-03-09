@@ -443,6 +443,7 @@ fn run_verify(ws: &Workspace<'_>, tar: &FileLock, opts: &PackageOpts<'_>) -> Car
     let pkg_fingerprint = hash_all(&dst)?;
     let ws = Workspace::ephemeral(new_pkg, config, None, true)?;
 
+<<<<<<< HEAD
     let exec: Arc<dyn Executor> = Arc::new(DefaultExecutor);
     ops::compile_ws(
         &ws,
@@ -477,6 +478,23 @@ fn run_verify(ws: &Workspace<'_>, tar: &FileLock, opts: &PackageOpts<'_>) -> Car
             changes
         )
     }
+=======
+    ops::compile_ws(&ws, None, &ops::CompileOptions {
+        config,
+        jobs: opts.jobs,
+        target: opts.target,
+        features: Vec::new(),
+        no_default_features: false,
+        all_features: false,
+        spec: ops::Packages::Packages(Vec::new()),
+        filter: ops::CompileFilter::Default { required_features_filterable: true },
+        release: false,
+        message_format: ops::MessageFormat::Human,
+        mode: ops::CompileMode::Build,
+        target_rustdoc_args: None,
+        target_rustc_args: None,
+    }, Arc::new(DefaultExecutor))?;
+>>>>>>> Make command-line arguments owned
 
     Ok(())
 }

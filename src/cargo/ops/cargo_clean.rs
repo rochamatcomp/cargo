@@ -11,6 +11,11 @@ use crate::util::paths;
 use crate::util::Config;
 
 pub struct CleanOptions<'a> {
+<<<<<<< HEAD
+=======
+    pub spec: Vec<String>,
+    pub target: Option<&'a str>,
+>>>>>>> Make command-line arguments owned
     pub config: &'a Config,
     /// A list of packages to clean. If empty, everything is cleaned.
     pub spec: Vec<String>,
