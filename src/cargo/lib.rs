@@ -1,4 +1,5 @@
 #![cfg_attr(test, deny(warnings))]
+<<<<<<< HEAD
 #![warn(rust_2018_idioms)]
 // While we're getting used to 2018:
 // Clippy isn't enforced by CI (@alexcrichton isn't a fan).
@@ -14,6 +15,50 @@
 #![allow(clippy::too_many_arguments)] // large project
 #![allow(clippy::type_complexity)] // there's an exceptionally complex type
 #![allow(clippy::wrong_self_convention)] // perhaps `Rc` should be special-cased in Clippy?
+=======
+
+// Currently, Cargo does not use clippy for its source code.
+// But if someone runs it they should know that
+// @alexcrichton disagree with clippy on some style things
+#![cfg_attr(feature = "cargo-clippy", allow(explicit_iter_loop))]
+
+#[macro_use] extern crate failure;
+#[macro_use] extern crate log;
+#[macro_use] extern crate scoped_tls;
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate serde_json;
+extern crate atty;
+extern crate clap;
+extern crate crates_io as registry;
+extern crate crossbeam;
+extern crate curl;
+extern crate filetime;
+extern crate flate2;
+extern crate fs2;
+extern crate git2;
+extern crate glob;
+extern crate hex;
+extern crate home;
+extern crate ignore;
+extern crate jobserver;
+extern crate lazycell;
+#[macro_use] extern crate lazy_static;
+extern crate libc;
+extern crate libgit2_sys;
+extern crate num_cpus;
+extern crate same_file;
+extern crate semver;
+extern crate serde;
+extern crate serde_ignored;
+extern crate shell_escape;
+extern crate tar;
+extern crate tempdir;
+extern crate termcolor;
+extern crate toml;
+extern crate url;
+#[cfg(target_os = "macos")]
+extern crate core_foundation;
+>>>>>>> Unwind stack for cli errors
 
 use std::fmt;
 

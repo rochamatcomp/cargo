@@ -7,7 +7,11 @@ use std::str;
 
 use clap;
 use failure::{Context, Error, Fail};
+<<<<<<< HEAD
 use log::trace;
+=======
+use clap;
+>>>>>>> Unwind stack for cli errors
 
 use crate::core::{TargetKind, Workspace};
 
@@ -267,6 +271,10 @@ impl From<clap::Error> for CliError {
         CliError::new(err.into(), code)
     }
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> Unwind stack for cli errors
 
 // =============================================================================
 // Construction helpers
